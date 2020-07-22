@@ -1,0 +1,30 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+
+steps:
+- script: dotnet restore
+  displayName: 'Restore'
+- script: dotnet build --configuration $(buildConfiguration)
+  displayName: 'Build'
+- script: dotnet test --no-build --configuration $(buildConfiguration) --collect:"XPlat Code Coverage" --logger trx
+  displayName: 'Test'
+- script: dotnet pack --configuration $(buildConfiguration)
+  displayName: 'Pack'
+
+- task: PublishTestResults@2
+  inputs:
+    testRunner: VSTest
+    testResultsFiles: '**/*.trx'
+
+- task: PublishCodeCoverageResults@1
+  displayName: 'Upload Coverage'
+  inputs:
+    codeCoverageTool: 'cobertura'
+    summaryFileLocation: '$(Build.SourcesDirectory)/**/coverage.cobertura.xml'
+    failIfCoverageEmpty: true
