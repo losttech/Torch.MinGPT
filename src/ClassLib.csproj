@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -8,10 +8,21 @@
     <!-- Package stuff -->
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <!--<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>-->
+
+    <!-- The following is recommended for public projects -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <DebugSymbols>true</DebugSymbols>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\LICENSE" Pack="true" PackagePath=""/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The following is recommended for public projects -->
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
