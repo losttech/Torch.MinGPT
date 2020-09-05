@@ -9,27 +9,32 @@
 
     public class Siren : Model {
         readonly Dense[] innerLayers;
-        public float FrequencyScale { get; }
+        public float InnerFrequencyScale { get; }
+        public float InputFrequencyScale { get; }
 
-        public Siren(int inputSize, int[] innerSizes, float frequencyScale = 30.0f) {
+        public Siren(int inputSize, int[] innerSizes,
+                     float inputFrequencyScale = 30.0f,
+                     float innerFrequencyScale = 30.0f) {
             if (inputSize <= 0)
                 throw new ArgumentOutOfRangeException(nameof(inputSize));
             if (innerSizes is null || innerSizes.Length == 0)
                 throw new ArgumentNullException(nameof(innerSizes));
             if (innerSizes.Any(size => size < 0))
                 throw new ArgumentOutOfRangeException(nameof(innerSizes));
-            if (float.IsInfinity(frequencyScale) || float.IsNaN(frequencyScale)
-                || Math.Abs(frequencyScale) <= 4*float.Epsilon)
-                throw new ArgumentOutOfRangeException(nameof(frequencyScale));
+            if (!IsValidFrequencyScale(inputFrequencyScale))
+                throw new ArgumentOutOfRangeException(nameof(inputFrequencyScale));
+            if (!IsValidFrequencyScale(innerFrequencyScale))
+                throw new ArgumentOutOfRangeException(nameof(innerFrequencyScale));
 
-            this.FrequencyScale = frequencyScale;
+            this.InputFrequencyScale = inputFrequencyScale;
+            this.InnerFrequencyScale = innerFrequencyScale;
 
             this.innerLayers = new Dense[innerSizes.Length];
 
             int currentInputSize = inputSize;
             for (int innerIndex = 0; innerIndex < innerSizes.Length; innerIndex++) {
                 double weightLimits = innerIndex > 0
-                    ? Math.Sqrt(6.0f / currentInputSize) / this.FrequencyScale
+                    ? Math.Sqrt(6.0f / currentInputSize) / this.InnerFrequencyScale
                     : 1.0f / inputSize;
                 this.innerLayers[innerIndex] = new Dense(innerSizes[innerIndex],
                     kernel_initializer: new initializers.uniform(minval: -weightLimits, maxval: +weightLimits)
@@ -44,8 +49,14 @@
             if (mask != null)
                 throw new NotImplementedException("mask");
             var result = (Tensor)input;
-            foreach (var innerLayer in this.innerLayers)
-                result = tf.sin(innerLayer.__call__(result) * this.FrequencyScale);
+            for (int layerIndex = 0; layerIndex < this.innerLayers.Length; layerIndex++) {
+                var layer = this.innerLayers[layerIndex];
+                float frequencyScale = layerIndex == 0
+                    ? this.InputFrequencyScale
+                    : this.InnerFrequencyScale;
+                result = tf.sin(layer.__call__(result) * frequencyScale);
+            }
+
             return result;
         }
 
@@ -63,5 +74,10 @@
             outputShape[^1] = this.innerLayers[^1].units;
             return new TensorShape(outputShape);
         }
+
+        static bool IsValidFrequencyScale(float scale)
+            => !float.IsInfinity(scale)
+            && !float.IsNaN(scale)
+            && (Math.Abs(scale) > 4 * float.Epsilon);
     }
 }
