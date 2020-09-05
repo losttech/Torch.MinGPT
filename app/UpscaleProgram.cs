@@ -37,6 +37,12 @@
                 optimizer: new Adam(learning_rate: 0.00032),
                 loss: new MeanSquaredError());
 
+            if (args.Length == 0) {
+                siren.load_weights("sample.weights");
+                Render(siren, 1034*3, 1536*3, "sample6X.png");
+                return;
+            }
+
             foreach (string imagePath in args) {
                 using var original = new Bitmap(imagePath);
                 byte[,,] image = ToBytesHWC(original);
@@ -72,6 +78,17 @@
                     shuffleMode: TrainingShuffleMode.Batch,
                     callbacks: new ICallback[] { improved });
             }
+        }
+
+        static void Render(Model siren, int width, int height, string path) {
+            var renderCoords = SirenTests.Coord(height, width).ToNumPyArray();
+            ndarray<float> renderBytes = siren.predict(
+                renderCoords.reshape(new[] { height * width, 2 }),
+                batch_size: 1024);
+            const int channels = 4;
+            renderBytes = (ndarray<float>)renderBytes.reshape(new[] { height, width, channels });
+            using var bitmap = ToImage(RestoreImage(renderBytes));
+            bitmap.Save(path, ImageFormat.Png);
         }
 
         class ImprovedCallback : Callback {
