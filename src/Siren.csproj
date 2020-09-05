@@ -5,7 +5,7 @@
     <RootNamespace>tensorflow.keras</RootNamespace>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>8.0</LangVersion>
-    <VersionPrefix>0.1</VersionPrefix>
+    <VersionPrefix>0.1.1</VersionPrefix>
     <Nullable>enable</Nullable>
 
     <!-- Package stuff -->
@@ -18,7 +18,7 @@ SOTA 2020.
 See project page for usage example.
     </Description>
     <PackageProjectUrl>https://github.com/losttech/Siren</PackageProjectUrl>
-    <PackageTags>TensorFlow;signal processing;image processing;audio processing;video processing;Keras;deep learning;ML</PackageTags>
+    <PackageTags>TensorFlow;signal-processing;image-processing;audio-processing;video-processing;Keras;deep-learning;ML;image;audio;video;sound</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Victor Milovanov</Authors>
     <Company>Lost Tech LLC</Company>
