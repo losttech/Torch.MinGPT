@@ -9,7 +9,20 @@
     <Nullable>enable</Nullable>
 
     <!-- Package stuff -->
+    <Description>SIREN neural network (https://vsitzmann.github.io/siren/).
+
+Network with sine activations, perfect for neural representations of various signals: images, video, audio.
+
+SOTA 2020.
+
+See project page for usage example.
+    </Description>
+    <PackageProjectUrl>https://github.com/losttech/Siren</PackageProjectUrl>
+    <PackageTags>TensorFlow;signal processing;image processing;audio processing;video processing;Keras;deep learning;ML</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Authors>Victor Milovanov</Authors>
+    <Company>Lost Tech LLC</Company>
+    <Product>LostTech.TensorFlow</Product>
     <!--<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>-->
 
     <!-- The following is recommended for public projects -->
@@ -17,6 +30,8 @@
     <DebugSymbols>true</DebugSymbols>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <RepositoryUrl>https://github.com/losttech/Siren.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
