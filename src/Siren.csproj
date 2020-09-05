@@ -1,8 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <AssemblyName>LostTech.TensorFlow.Siren</AssemblyName>
+    <RootNamespace>tensorflow.keras</RootNamespace>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>8.0</LangVersion>
+    <VersionPrefix>0.0.1</VersionPrefix>
     <Nullable>enable</Nullable>
 
     <!-- Package stuff -->
@@ -17,10 +20,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\LICENSE" Pack="true" PackagePath=""/>
+    <None Include="..\LICENSE" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="LostTech.Python.Runtime" Version="3.0.2-b1224" />
+    <PackageReference Include="LostTech.TensorFlow" Version="1.15.0-RC1" />
     <!-- The following is recommended for public projects -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
