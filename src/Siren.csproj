@@ -39,8 +39,7 @@ See project page for usage example.
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LostTech.Python.Runtime" Version="3.0.2" />
-    <PackageReference Include="LostTech.TensorFlow" Version="[1.15.0-RC1, 1.16)" />
+    <PackageReference Include="LostTech.TensorFlow" Version="[1.15.0, 1.16)" />
     <!-- The following is recommended for public projects -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
