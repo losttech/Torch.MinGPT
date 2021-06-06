@@ -4,8 +4,9 @@
     using System.Linq;
 
     using LostTech.Gradient.ManualWrappers;
-
+    using tensorflow.keras.initializers;
     using tensorflow.keras.layers;
+    using tensorflow.python.keras.engine.keras_tensor;
 
     /// <summary>
     /// Implements <a href="https://vsitzmann.github.io/siren/">SIREN: Implicit Neural Representations with Periodic Activation Functions</a>
@@ -85,7 +86,8 @@
                     ? Math.Sqrt(6.0f / currentInputSize) / this.InnerFrequencyScale
                     : 1.0f / inputSize;
                 this.innerLayers[innerIndex] = new Dense(innerSizes[innerIndex],
-                    kernel_initializer: new initializers.uniform(minval: -weightLimits, maxval: +weightLimits)
+                    use_bias: true, activation: null,
+                    kernel_initializer: new RandomUniform(minval: -weightLimits, maxval: +weightLimits)
                 );
                 this.Track(this.innerLayers[innerIndex]);
 
@@ -93,9 +95,7 @@
             }
         }
 
-        Tensor CallImpl(IGraphNodeBase input, object? mask) {
-            if (mask != null)
-                throw new NotImplementedException("mask");
+        Tensor CallImpl(IGraphNodeBase input) {
             var result = (Tensor)input;
             for (int layerIndex = 0; layerIndex < this.innerLayers.Length; layerIndex++) {
                 var layer = this.innerLayers[layerIndex];
@@ -108,14 +108,11 @@
             return result;
         }
 
-        public override Tensor call(IGraphNodeBase inputs, IGraphNodeBase training, IGraphNodeBase mask)
-            => this.CallImpl(inputs, mask);
+        public override Tensor call(IGraphNodeBase inputs, params object[] args)
+            => this.CallImpl(inputs);
 
-        public override Tensor call(IGraphNodeBase inputs, bool training, IGraphNodeBase? mask = null)
-            => this.CallImpl(inputs, mask);
-
-        public override Tensor call(IGraphNodeBase inputs, IGraphNodeBase? training = null, IEnumerable<IGraphNodeBase>? mask = null)
-            => this.CallImpl(inputs, mask);
+        public IKerasTensor __call__(IKerasTensor input) => this.__call___dyn(input);
+        public IGraphNodeBase __call__(IGraphNodeBase input) => this.__call___dyn(input);
 
         public override TensorShape compute_output_shape(TensorShape input_shape) {
             var outputShape = input_shape.as_list();

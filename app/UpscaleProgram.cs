@@ -1,4 +1,4 @@
-﻿namespace tensorflow.keras {
+namespace tensorflow.keras {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -35,7 +35,7 @@
                 //optimizer: new SGD(momentum: 0.5),
                 // lowered learning rate to avoid destabilization
                 optimizer: new Adam(learning_rate: 0.00032),
-                loss: new MeanSquaredError());
+                loss: "mse");
 
             if (args.Length == 0) {
                 siren.load_weights("sample.weights");
@@ -53,13 +53,12 @@
 
                 var imageSamples = PrepareImage(image);
 
-                var coords = SirenTests.Coord(height, width).ToNumPyArray()
+                var coords = ImageTools.Coord(height, width).ToNumPyArray()
                     .reshape(new[] { width * height, 2 });
 
-                var upscaleCoords = SirenTests.Coord(height * 2, width * 2).ToNumPyArray();
+                var upscaleCoords = ImageTools.Coord(height * 2, width * 2).ToNumPyArray();
 
-                var improved = new ImprovedCallback();
-                improved.OnLossImproved += (sender, eventArgs) => {
+                var improved = ImprovedCallback.Create((sender, eventArgs) => {
                     if (eventArgs.Epoch < 10) return;
                     ndarray<float> upscaled = siren.predict(
                         upscaleCoords.reshape(new[] { height * width * 4, 2 }),
@@ -72,7 +71,7 @@
 
                     Console.WriteLine();
                     Console.WriteLine("saved!");
-                };
+                });
 
                 siren.fit(coords, imageSamples, epochs: 100, batchSize: 64, stepsPerEpoch: 200,
                     shuffleMode: TrainingShuffleMode.Batch,
@@ -81,7 +80,7 @@
         }
 
         static void Render(Model siren, int width, int height, string path) {
-            var renderCoords = SirenTests.Coord(height, width).ToNumPyArray();
+            var renderCoords = ImageTools.Coord(height, width).ToNumPyArray();
             ndarray<float> renderBytes = siren.predict(
                 renderCoords.reshape(new[] { height * width, 2 }),
                 batch_size: 1024);
@@ -91,20 +90,22 @@
             bitmap.Save(path, ImageFormat.Png);
         }
 
-        class ImprovedCallback : Callback {
+        static class ImprovedCallback {
+            public static Callback Create(EventHandler<EpochEndEventArgs> onLossImproved) {
             double bestLoss = double.PositiveInfinity;
-            public override void on_epoch_end(int epoch, IDictionary<string, dynamic> logs) {
-                base.on_epoch_end(epoch, logs);
-                if (logs["loss"] < this.bestLoss) {
-                    this.bestLoss = logs["loss"];
-                    this.OnLossImproved?.Invoke(this, new EpochEndEventArgs {
+                void on_epoch_end(int epoch, IDictionary<string, dynamic> logs) {
+                    if (logs["loss"] < bestLoss) {
+                        bestLoss = logs["loss"];
+                        onLossImproved?.Invoke(null, new EpochEndEventArgs {
                         Epoch = epoch,
                         Logs = logs,
                     });
                 }
             }
-
-            public event EventHandler<EpochEndEventArgs> OnLossImproved;
+                var callbackFn = new Action<int, IDictionary<string, dynamic>>(on_epoch_end);
+                // using LabmdaCallback is more performant, as it does not require TF to call on_batch_begin
+                return new LambdaCallback(on_epoch_end: PythonFunctionContainer.Of(callbackFn));
+            }
         }
 
         class EpochEndEventArgs : EventArgs {
@@ -117,15 +118,15 @@
             int width = image.GetLength(1);
             int channels = image.GetLength(2);
 
-            var normalized = SirenTests.NormalizeChannelValue(image.ToNumPyArray());
+            var normalized = ImageTools.NormalizeChannelValue(image.ToNumPyArray());
             var flattened = normalized.reshape(new[] { height * width, channels }).astype(np.float32_fn);
             return (ndarray<float>)flattened;
         }
 
         static Tensor ClampToValidChannelValueRange(Tensor input)
             => tf.clip_by_value(input,
-                clip_value_min: SirenTests.NormalizeChannelValue(-0.01f),
-                clip_value_max: SirenTests.NormalizeChannelValue(255.01f));
+                clip_value_min: ImageTools.NormalizeChannelValue(-0.01f),
+                clip_value_max: ImageTools.NormalizeChannelValue(255.01f));
 
         static unsafe byte[,,] RestoreImage(ndarray<float> learnedImage) {
             (int height, int width, int channels) = (ValueTuple<int, int, int>)learnedImage.shape;

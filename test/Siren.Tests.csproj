@@ -24,4 +24,8 @@
     <ProjectReference Include="..\src\Siren.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\app\ImageTools.cs" />
+  </ItemGroup>
+
 </Project>

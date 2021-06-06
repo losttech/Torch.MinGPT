@@ -3,9 +3,9 @@ namespace tensorflow.keras {
     using System.Linq;
     using numpy;
     using tensorflow.keras.layers;
-    using tensorflow.keras.losses;
     using tensorflow.keras.optimizers;
     using Xunit;
+    using static ImageTools;
 
     public partial class SirenTests {
         [Fact]
@@ -23,25 +23,12 @@ namespace tensorflow.keras {
 
             model.compile(
                 optimizer: new Adam(),
-                loss: new MeanSquaredError());
+                loss: "mse");
 
             model.fit(coords, targetValues: trainImage, epochs: 2, batchSize: 28*28, stepsPerEpoch: 1024);
 
             double testLoss = model.evaluate(coords, trainImage);
             return model;
         }
-
-        public static float[,,] Coord(int width, int height) {
-            var result = new float[width, height, 2];
-            for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++) {
-                result[x, y, 0] = x*2f/width - 1;
-                result[x, y, 1] = y*2f/height - 1;
-            }
-
-            return result;
-        }
-
-        public static dynamic NormalizeChannelValue(dynamic value) => value / 128f - 1f;
     }
 }
