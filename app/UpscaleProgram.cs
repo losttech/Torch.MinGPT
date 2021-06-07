@@ -73,8 +73,8 @@ namespace tensorflow.keras {
                     Console.WriteLine("saved!");
                 });
 
-                siren.fit(coords, imageSamples, epochs: 100, batchSize: 64, stepsPerEpoch: 200,
-                    shuffleMode: TrainingShuffleMode.Batch,
+                siren.fit(coords, imageSamples, epochs: 100, batchSize: 16*1024,
+                    shuffleMode: TrainingShuffleMode.Epoch,
                     callbacks: new ICallback[] { improved });
             }
         }
