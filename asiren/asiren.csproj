@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <RootNamespace>Siren</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ManyConsole.CommandLineUtils" Version="1.1.8-alpha" />
+    <PackageReference Include="NAudio" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\Siren.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\app\ImprovedCallback.cs" />
+  </ItemGroup>
+
+</Project>
