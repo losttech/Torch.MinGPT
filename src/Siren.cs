@@ -83,7 +83,7 @@
                 // Without proper weight initialization training will fail.
                 // See paper sec. 3.2
                 double weightLimits = innerIndex > 0
-                    ? Math.Sqrt(6.0f / currentInputSize) / this.InnerFrequencyScale
+                    ? InnerInitWeightLimit(currentInputSize, frequencyScale: this.InnerFrequencyScale)
                     : 1.0f / inputSize;
                 this.innerLayers[innerIndex] = new Dense(innerSizes[innerIndex],
                     use_bias: true, activation: null,
@@ -124,5 +124,8 @@
             => !float.IsInfinity(scale)
             && !float.IsNaN(scale)
             && (Math.Abs(scale) > 4 * float.Epsilon);
+
+        public static double InnerInitWeightLimit(int inputSize, float frequencyScale = RecommendedFrequencyScales.Default)
+            => Math.Sqrt(6.0f / inputSize) / frequencyScale;
     }
 }

@@ -1,4 +1,4 @@
-namespace tensorflow.keras {
+﻿namespace tensorflow.keras {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -25,16 +25,18 @@ namespace tensorflow.keras {
             var clampToValidChannelRange = PythonFunctionContainer.Of<Tensor, Tensor>(ClampToValidChannelValueRange);
             var siren = new Sequential(new object[] {
                 new GaussianNoise(stddev: 1f/(128*1024)),
-                new Siren(2, Enumerable.Repeat(256, 5).ToArray()),
+                new Siren(2, Enumerable.Repeat(64, 4).ToArray()),
                 new Dense(units: 4, activation: clampToValidChannelRange),
                 new GaussianNoise(stddev: 1f/128),
             });
+
+            const int batchSize = 64;
 
             siren.compile(
                 // too slow to converge
                 //optimizer: new SGD(momentum: 0.5),
                 // lowered learning rate to avoid destabilization
-                optimizer: new Adam(learning_rate: 0.00032),
+                optimizer: new Adam(learning_rate: 0.00032*64/batchSize),
                 loss: "mse");
 
             if (args.Length == 0) {
@@ -58,8 +60,11 @@ namespace tensorflow.keras {
 
                 var upscaleCoords = ImageTools.Coord(height * 2, width * 2).ToNumPyArray();
 
+                int lastUpgrade = 0;
+                const int ImproveEvery = 500;
                 var improved = ImprovedCallback.Create((sender, eventArgs) => {
-                    if (eventArgs.Epoch < 10) return;
+                    if (eventArgs.Epoch < lastUpgrade + ImproveEvery) return;
+
                     ndarray<float> upscaled = siren.predict(
                         upscaleCoords.reshape(new[] { height * width * 4, 2 }),
                         batch_size: 1024);
@@ -71,9 +76,11 @@ namespace tensorflow.keras {
 
                     Console.WriteLine();
                     Console.WriteLine("saved!");
+
+                    lastUpgrade = eventArgs.Epoch;
                 });
 
-                siren.fit(coords, imageSamples, epochs: 100, batchSize: 16*1024,
+                siren.fit(coords, imageSamples, epochs: 10000, batchSize: 16*1024,
                     shuffleMode: TrainingShuffleMode.Epoch,
                     callbacks: new ICallback[] { improved });
             }
@@ -88,29 +95,6 @@ namespace tensorflow.keras {
             renderBytes = (ndarray<float>)renderBytes.reshape(new[] { height, width, channels });
             using var bitmap = ToImage(RestoreImage(renderBytes));
             bitmap.Save(path, ImageFormat.Png);
-        }
-
-        static class ImprovedCallback {
-            public static Callback Create(EventHandler<EpochEndEventArgs> onLossImproved) {
-            double bestLoss = double.PositiveInfinity;
-                void on_epoch_end(int epoch, IDictionary<string, dynamic> logs) {
-                    if (logs["loss"] < bestLoss) {
-                        bestLoss = logs["loss"];
-                        onLossImproved?.Invoke(null, new EpochEndEventArgs {
-                        Epoch = epoch,
-                        Logs = logs,
-                    });
-                }
-            }
-                var callbackFn = new Action<int, IDictionary<string, dynamic>>(on_epoch_end);
-                // using LabmdaCallback is more performant, as it does not require TF to call on_batch_begin
-                return new LambdaCallback(on_epoch_end: PythonFunctionContainer.Of(callbackFn));
-            }
-        }
-
-        class EpochEndEventArgs : EventArgs {
-            public int Epoch { get; set; }
-            public IDictionary<string, dynamic> Logs { get; set; }
         }
 
         static ndarray<float> PrepareImage(byte[,,] image) {
