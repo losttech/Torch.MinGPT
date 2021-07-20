@@ -96,6 +96,7 @@
                         Console.Title = $"epoch: {epoch} batch: {batchN} of {batchCount}";
                     }
                     
+                    GC.Collect();
                     Console.WriteLine($"Epoch {epoch}. Avg. loss: {totalLoss / batchCount}");
                     var epochEnd = new EpochEndEventArgs { Epoch = epoch, AvgLoss = totalLoss / batchCount };
                     improved(null, epochEnd);
