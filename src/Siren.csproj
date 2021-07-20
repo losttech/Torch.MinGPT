@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>LostTech.TensorFlow.Siren</AssemblyName>
-    <RootNamespace>tensorflow.keras</RootNamespace>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>LostTech.Torch.Siren</AssemblyName>
+    <RootNamespace>LostTech.Torch</RootNamespace>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <LangVersion>9.0</LangVersion>
     <VersionPrefix>0.2.0</VersionPrefix>
     <Nullable>enable</Nullable>
@@ -17,12 +17,12 @@ SOTA 2020.
 
 See project page for usage example.
     </Description>
-    <PackageProjectUrl>https://github.com/losttech/Siren</PackageProjectUrl>
-    <PackageTags>TensorFlow;signal-processing;image-processing;audio-processing;video-processing;Keras;deep-learning;ML;image;audio;video;sound</PackageTags>
+    <PackageProjectUrl>https://github.com/losttech/Torch.Siren</PackageProjectUrl>
+    <PackageTags>PyTorch;TorchSharp;signal-processing;image-processing;audio-processing;video-processing;Keras;deep-learning;ML;image;audio;video;sound</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Victor Nova</Authors>
     <Company>Lost Tech LLC</Company>
-    <Product>LostTech.TensorFlow</Product>
+    <Product>LostTech.Torch</Product>
     <!--<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>-->
 
     <!-- The following is recommended for public projects -->
@@ -30,7 +30,7 @@ See project page for usage example.
     <DebugSymbols>true</DebugSymbols>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <RepositoryUrl>https://github.com/losttech/Siren.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/losttech/Torch.Siren.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
@@ -39,9 +39,9 @@ See project page for usage example.
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LostTech.TensorFlow" Version="[2.5.0-preview1, 3.0)" />
     <!-- The following is recommended for public projects -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="TorchSharp" Version="0.91.52681" />
   </ItemGroup>
 
 </Project>

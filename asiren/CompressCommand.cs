@@ -1,17 +1,13 @@
-﻿namespace Siren {
+﻿namespace LostTech.Torch.NN {
     using System;
     using System.Diagnostics;
     using System.IO;
     using System.Linq;
-    using LostTech.Gradient;
     using ManyConsole.CommandLineUtils;
-    using numpy;
-    using tensorflow;
-    using tensorflow.keras;
-    using tensorflow.keras.callbacks;
-    using tensorflow.keras.initializers;
-    using tensorflow.keras.layers;
-    using tensorflow.keras.optimizers;
+    using TorchSharp;
+    using TorchSharp.NN;
+    using TorchSharp.Tensor;
+    using static TorchSharp.NN.Modules;
 
     public class CompressCommand : ConsoleCommand {
         public override int Run(string[] remainingArguments) {
@@ -21,44 +17,43 @@
             float[] samples = AudioTools.Read(sourcePath, out int sampleRate);
 
             // this allows SIREN to oversaturate channels without adding to the loss
-            var clampToValidChannelRange = PythonFunctionContainer.Of<Tensor, Tensor>(ClampToValidChannelValueRange);
-
             double innerInitWeightLimit = Siren.InnerInitWeightLimit(this.Width);
-            object[] layers = new object[] {
-                new InputLayer(input_shape: 1),
+            Module siren = Sequential(
                 //new GaussianNoise(stddev: 1f/(128*1024*64)),
-                new Siren(inputSize: 1,
+                ("siren", new Siren(inputSize: 1,
                           innerSizes: Enumerable.Repeat(this.Width, this.Layers).ToArray(),
-                          inputFrequencyScale: Siren.RecommendedFrequencyScales.SoundInput*20),
-                new Dense(units: 1, activation: clampToValidChannelRange),
+                          inputFrequencyScale: Siren.RecommendedFrequencyScales.SoundInput*20)),
+                ("out_dense", Linear(inputSize: this.Width, outputSize: 1)),
+                ("clip", ClampToValidChannelValueRange())
                 //new GaussianNoise(stddev: 1f/4096),
-            };
-            var siren = new Sequential(layers);
-            var trainedSiren = new Sequential(layers);
+            );
 
-            siren.compile(
-                optimizer: new Adam(learning_rate: 3e-6),
-                //optimizer: new SGD(learning_rate: 1e-4),
-                loss: "mse");
+            var device = Torch.IsCudaAvailable() ? Device.CUDA : null;
+
+            if (device is not null) siren = siren.to(device);
+
+            var optimizer = Optimizer.Adam(siren.parameters(), learningRate: 3e-6);
+            var loss = Functions.mse_loss();
 
             var coords = Enumerable.Range(0, samples.Length)
                 .Select(i => i * 2f / samples.Length - 1)
-                .ToNumPyArray().reshape(new[] { samples.Length, 1 });
+                .ToArray().ToTorchTensor(new long[] { samples.Length, 1 });
 
-            var feedableSamples = samples.ToNumPyArray().reshape(new[] { samples.Length, 1 });
+            var feedableSamples = samples.ToTorchTensor(new long[] { samples.Length, 1 });
 
             int lastUpgrade = 0;
             const int ImproveEvery = 50;
             var improved = ImprovedCallback.Create((sender, eventArgs) => {
                 if (eventArgs.Epoch < lastUpgrade + ImproveEvery) return;
 
-                siren.save_weights(destPath + "+opt");
-                trainedSiren.save_weights(destPath);
+                using var noGrad = new AutoGradMode(false);
+                siren.save(destPath);
 
-                ndarray<float> sample = siren.predict(coords, batch_size: this.BatchSize).AsType<float>();
+                using var sample = siren.forward(coords).cpu();
                 float[] rawSample = new float[samples.Length];
+                sample.Data<float>().CopyTo(rawSample);
                 for (int i = 0; i < rawSample.Length; i++) {
-                    rawSample[i] = Clamp(min: -1, max: 1, sample[i, 0].AsScalar());
+                    rawSample[i] = Clamp(min: -1, max: 1, sample[i, 0].ToScalar().ToSingle());
                 }
                 AudioTools.Write(destSamplePath, rawSample, sampleRate);
 
@@ -68,10 +63,31 @@
                 lastUpgrade = eventArgs.Epoch;
             });
 
+            int batchesPerEpoch = samples.Length / this.BatchSize;
 
-            siren.fit(coords, feedableSamples, epochs: this.Epochs, batchSize: this.BatchSize,
-                    shuffleMode: TrainingShuffleMode.Epoch,
-                    callbacks: new ICallback[] { improved });
+            for (int epoch = 0; epoch < this.Epochs; epoch++) {
+                double totalLoss = 0;
+                for (int batchN = 0; batchN < batchesPerEpoch; batchN++) {
+                    var (ins, outs) = (coords, feedableSamples).RandomBatch(this.BatchSize, device);
+                    optimizer.zero_grad();
+                    using var predicted = siren.forward(ins);
+                    using var batchLoss = loss(predicted, outs);
+                    batchLoss.backward();
+                    optimizer.step();
+
+                    ins.Dispose(); outs.Dispose();
+
+                    using var noGrad = new AutoGradMode(false);
+                    totalLoss += batchLoss.cpu().mean().ToDouble();
+
+                    Console.Title = $"epoch: {epoch} batch: {batchN} of {batchesPerEpoch}";
+                }
+                var epochEnd = new EpochEndEventArgs {
+                    Epoch = epoch,
+                    AvgLoss = totalLoss / batchesPerEpoch,
+                };
+                improved(null, epochEnd);
+            }
 
             return 0;
         }
@@ -99,9 +115,7 @@
         static float Clamp(float min, float max, float value)
             => MathF.Max(min, MathF.Min(max, value));
 
-        static Tensor ClampToValidChannelValueRange(Tensor input)
-            => tf.clip_by_value(input,
-                clip_value_min: -1.000001f,
-                clip_value_max: +1.000001f);
+        static Module ClampToValidChannelValueRange()
+            => new Clamp { Min = -1, Max = +1 };
     }
 }

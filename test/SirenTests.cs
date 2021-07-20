@@ -1,33 +1,55 @@
-namespace tensorflow.keras {
-    using System;
-    using System.Linq;
-    using numpy;
-    using tensorflow.keras.layers;
-    using tensorflow.keras.optimizers;
+namespace LostTech.Torch.NN {
+    using System.Diagnostics;
+    using System.Drawing;
+    using TorchSharp.NN;
+    using TorchSharp.Tensor;
     using Xunit;
     using static ImageTools;
+    using static TorchSharp.NN.Modules;
 
     public partial class SirenTests {
         [Fact]
-        public Model CanLearn() {
-            // requires Internet connection
-            (dynamic train, dynamic test) = tf.keras.datasets.fashion_mnist.load_data();
-            ndarray trainImage = NormalizeChannelValue(train.Item1)[0];
-            trainImage = (ndarray)np.expand_dims(trainImage, axis: 2).reshape(new []{ 28*28, 1 });
-            var coords = Coord(28, 28).ToNumPyArray().reshape(new []{28*28, 2});
+        public Module CanLearn() {
+            TorchSharp.Torch.SetSeed(119);
 
-            var model = new Sequential(new object[] {
-                new Siren(2, Enumerable.Repeat(128, 3).ToArray()),
-                new Dense(units: 1, activation: tf.keras.activations.relu_fn),
-            });
+            var thisAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+            string wikiLogoName = thisAssembly.GetManifestResourceNames()[0];
 
-            model.compile(
-                optimizer: new Adam(),
-                loss: "mse");
+            using var wikiLogo = new Bitmap(thisAssembly.GetManifestResourceStream(wikiLogoName));
+            byte[,,] bytesHWC = ToBytesHWC(wikiLogo);
+            var trainImage = PrepareImage(bytesHWC);
+            var coords = Coord(wikiLogo.Height, wikiLogo.Width).Flatten()
+                         .ToTorchTensor(new long[] { wikiLogo.Height * wikiLogo.Width, 2 });
 
-            model.fit(coords, targetValues: trainImage, epochs: 2, batchSize: 28*28, stepsPerEpoch: 1024);
+            var model = Sequential(
+                ("siren", new Siren(2, innerSizes: new[] { 128, 128, 128, 128 })),
+                ("linear", Linear(inputSize: 128, outputSize: 1)),
+                ("final_activation", ReLU())
+            );
 
-            double testLoss = model.evaluate(coords, trainImage);
+            using var optimizer = Optimizer.Adam(model.parameters());
+            var loss = Functions.mse_loss();
+
+            const int batchSize = 1024;
+            const int batches = 1000;
+
+            for (int batchN = 0; batchN < batches; batchN++) {
+                var (ins, outs) = (coords, trainImage).RandomBatch(batchSize);
+                optimizer.zero_grad();
+                using var predicted = model.forward(ins);
+                using var batchLoss = loss(predicted, outs);
+                batchLoss.backward();
+                optimizer.step();
+
+                ins.Dispose();
+                outs.Dispose();
+
+                if (batchN % (batches / 10) == (batches / 10 - 1))
+                    Trace.WriteLine($"loss {batchN}: {batchLoss.mean().ToSingle()}");
+            }
+            using var recall = model.forward(coords);
+            double recallLoss = loss(recall, trainImage).mean().ToDouble();
+            Assert.True(recallLoss < 0.0001, recallLoss.ToString());
             return model;
         }
     }

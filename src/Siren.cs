@@ -1,12 +1,12 @@
-﻿namespace tensorflow.keras {
+﻿namespace LostTech.Torch.NN {
     using System;
     using System.Collections.Generic;
     using System.Linq;
-
-    using LostTech.Gradient.ManualWrappers;
-    using tensorflow.keras.initializers;
-    using tensorflow.keras.layers;
-    using tensorflow.python.keras.engine.keras_tensor;
+    using TorchSharp;
+    using TorchSharp.NN;
+    using TorchSharp.Tensor;
+    using static System.FormattableString;
+    using static TorchSharp.NN.Modules;
 
     /// <summary>
     /// Implements <a href="https://vsitzmann.github.io/siren/">SIREN: Implicit Neural Representations with Periodic Activation Functions</a>
@@ -14,8 +14,8 @@
     ///
     /// <para>All SIREN inputs must be normalized to [-1;1] interval.</para>
     /// </summary>
-    public class Siren : Model {
-        readonly Dense[] innerLayers;
+    public class Siren : CustomModule {
+        readonly Linear[] innerLayers;
         /// <summary>
         /// Frequency scale for input layer (<c>first_omega_0</c> in the paper).
         /// <para>The layer formula is <c>sin(FreqScale*(Weight*input+Bias)</c></para>
@@ -60,7 +60,8 @@
         /// </param>
         public Siren(int inputSize, int[] innerSizes,
                      float inputFrequencyScale = RecommendedFrequencyScales.Default,
-                     float innerFrequencyScale = RecommendedFrequencyScales.Default) {
+                     float innerFrequencyScale = RecommendedFrequencyScales.Default)
+                     : base("Siren") {
             if (inputSize <= 0)
                 throw new ArgumentOutOfRangeException(nameof(inputSize));
             if (innerSizes is null || innerSizes.Length == 0)
@@ -75,7 +76,9 @@
             this.InputFrequencyScale = inputFrequencyScale;
             this.InnerFrequencyScale = innerFrequencyScale;
 
-            this.innerLayers = new Dense[innerSizes.Length];
+            using var noGrad = new AutoGradMode(false);
+
+            this.innerLayers = new Linear[innerSizes.Length];
 
             int currentInputSize = inputSize;
             for (int innerIndex = 0; innerIndex < innerSizes.Length; innerIndex++) {
@@ -85,39 +88,26 @@
                 double weightLimits = innerIndex > 0
                     ? InnerInitWeightLimit(currentInputSize, frequencyScale: this.InnerFrequencyScale)
                     : 1.0f / inputSize;
-                this.innerLayers[innerIndex] = new Dense(innerSizes[innerIndex],
-                    use_bias: true, activation: null,
-                    kernel_initializer: new RandomUniform(minval: -weightLimits, maxval: +weightLimits)
-                );
-                this.Track(this.innerLayers[innerIndex]);
+                var layer = Linear(inputSize: currentInputSize, outputSize: innerSizes[innerIndex]);
+                this.innerLayers[innerIndex] = layer;
+                Init.uniform(layer.Weight, low: -weightLimits, high: +weightLimits);
+                this.RegisterModule(Invariant($"i{innerIndex}"), layer);
 
                 currentInputSize = innerSizes[innerIndex];
             }
         }
 
-        Tensor CallImpl(IGraphNodeBase input) {
-            var result = (Tensor)input;
+        public override TorchTensor forward(TorchTensor t) {
+            var result = t;
             for (int layerIndex = 0; layerIndex < this.innerLayers.Length; layerIndex++) {
                 var layer = this.innerLayers[layerIndex];
                 float frequencyScale = layerIndex == 0
                     ? this.InputFrequencyScale
                     : this.InnerFrequencyScale;
-                result = tf.sin(layer.__call__(result) * frequencyScale);
+                result = (layer.forward(result) * frequencyScale).sin_();
             }
 
             return result;
-        }
-
-        public override Tensor call(IGraphNodeBase inputs, params object[] args)
-            => this.CallImpl(inputs);
-
-        public IKerasTensor __call__(IKerasTensor input) => this.__call___dyn(input);
-        public IGraphNodeBase __call__(IGraphNodeBase input) => this.__call___dyn(input);
-
-        public override TensorShape compute_output_shape(TensorShape input_shape) {
-            var outputShape = input_shape.as_list();
-            outputShape[^1] = this.innerLayers[^1].units;
-            return new TensorShape(outputShape);
         }
 
         static bool IsValidFrequencyScale(float scale)

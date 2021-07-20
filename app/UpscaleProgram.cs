@@ -1,78 +1,74 @@
-﻿namespace tensorflow.keras {
+﻿namespace LostTech.Torch.NN {
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Drawing;
     using System.Drawing.Imaging;
     using System.Linq;
-
-    using LostTech.Gradient;
-    using LostTech.TensorFlow;
-
-    using numpy;
-
-    using tensorflow.keras.callbacks;
-    using tensorflow.keras.layers;
-    using tensorflow.keras.losses;
-    using tensorflow.keras.optimizers;
+    using TorchSharp;
+    using TorchSharp.NN;
+    using TorchSharp.Tensor;
+    using static TorchSharp.NN.Modules;
 
     class UpscaleProgram {
         static void Main(string[] args) {
-            GradientEngine.UseEnvironmentFromVariable();
-            TensorFlowSetup.Instance.EnsureInitialized();
+            Module siren = Sequential(
+                ("in_noise", new GaussianNoise { StdDev = 1f / (128 * 1024) }),
+                ("siren", new Siren(2, Enumerable.Repeat(64, 4).ToArray())),
+                ("out_dense", Linear(inputSize: 64, outputSize: 4)),
+                // this allows SIREN to oversaturate channels without adding to the loss
+                ("clip", ClampToValidChannelValueRange()),
+                ("out_noise", new GaussianNoise { StdDev = 1f / 128 })
+            );
 
-            // this allows SIREN to oversaturate channels without adding to the loss
-            var clampToValidChannelRange = PythonFunctionContainer.Of<Tensor, Tensor>(ClampToValidChannelValueRange);
-            var siren = new Sequential(new object[] {
-                new GaussianNoise(stddev: 1f/(128*1024)),
-                new Siren(2, Enumerable.Repeat(64, 4).ToArray()),
-                new Dense(units: 4, activation: clampToValidChannelRange),
-                new GaussianNoise(stddev: 1f/128),
-            });
+            var device = Torch.IsCudaAvailable() ? Device.CUDA : null;
 
-            const int batchSize = 64;
+            if (device is not null) siren = siren.to(device);
 
-            siren.compile(
-                // too slow to converge
-                //optimizer: new SGD(momentum: 0.5),
-                // lowered learning rate to avoid destabilization
-                optimizer: new Adam(learning_rate: 0.00032*64/batchSize),
-                loss: "mse");
+            int batchSize = Torch.IsCudaAvailable() ? 8*1024 : 64;
+
+            // lowered learning rate to avoid destabilization
+            var optimizer = Optimizer.Adam(siren.parameters(), learningRate: 0.00032 * 64 / batchSize);
+            var loss = Functions.mse_loss();
 
             if (args.Length == 0) {
-                siren.load_weights("sample.weights");
-                Render(siren, 1034*3, 1536*3, "sample6X.png");
+                siren.load("sample.weights");
+                Render(siren, 1034 * 3, 1536 * 3, "sample6X.png");
                 return;
             }
 
             foreach (string imagePath in args) {
                 using var original = new Bitmap(imagePath);
-                byte[,,] image = ToBytesHWC(original);
+                byte[,,] image = ImageTools.ToBytesHWC(original);
                 int height = image.GetLength(0);
                 int width = image.GetLength(1);
                 int channels = image.GetLength(2);
                 Debug.Assert(channels == 4);
 
-                var imageSamples = PrepareImage(image);
+                TorchTensor imageSamples = ImageTools.PrepareImage(image, device);
 
-                var coords = ImageTools.Coord(height, width).ToNumPyArray()
-                    .reshape(new[] { width * height, 2 });
+                var coords = ImageTools.Coord(height, width)
+                    .Flatten().ToTorchTensor(new long[] { width * height, 2 });
 
-                var upscaleCoords = ImageTools.Coord(height * 2, width * 2).ToNumPyArray();
+                var upscaleCoords = ImageTools.Coord(height * 2, width * 2).ToTensor();
+
+                if (device is not null) {
+                    coords = coords.to(device);
+                    upscaleCoords = upscaleCoords.to(device);
+                }
 
                 int lastUpgrade = 0;
                 const int ImproveEvery = 500;
                 var improved = ImprovedCallback.Create((sender, eventArgs) => {
                     if (eventArgs.Epoch < lastUpgrade + ImproveEvery) return;
 
-                    ndarray<float> upscaled = siren.predict(
-                        upscaleCoords.reshape(new[] { height * width * 4, 2 }),
-                        batch_size: 1024);
-                    upscaled = (ndarray<float>)upscaled.reshape(new[] { height * 2, width * 2, channels });
-                    using var bitmap = ToImage(RestoreImage(upscaled));
+                    var upscaled = siren.forward(
+                        upscaleCoords.reshape(height * width * 4, 2));
+                    upscaled = upscaled.reshape(height * 2, width * 2, channels);
+                    using var bitmap = ToImage(RestoreImage(upscaled.cpu()));
                     bitmap.Save("sample4X.png", ImageFormat.Png);
 
-                    siren.save_weights("sample.weights");
+                    siren.save("sample.weights");
 
                     Console.WriteLine();
                     Console.WriteLine("saved!");
@@ -80,41 +76,51 @@
                     lastUpgrade = eventArgs.Epoch;
                 });
 
-                siren.fit(coords, imageSamples, epochs: 10000, batchSize: 16*1024,
-                    shuffleMode: TrainingShuffleMode.Epoch,
-                    callbacks: new ICallback[] { improved });
+                int batchCount = height * width / batchSize;
+                for (int epoch = 0; epoch < 10000; epoch++) {
+                    double totalLoss = 0;
+                    for (int batchN = 0; batchN < batchCount; batchN++) {
+                        var (ins, outs) = (coords, imageSamples).RandomBatch(batchSize, device);
+                        optimizer.zero_grad();
+                        using var predicted = siren.forward(ins);
+                        using var batchLoss = loss(predicted, outs);
+                        batchLoss.backward();
+                        optimizer.step();
+
+                        ins.Dispose();
+                        outs.Dispose();
+
+                        using var noGrad = new AutoGradMode(false);
+                        totalLoss += batchLoss.cpu().mean().ToDouble();
+
+                        Console.Title = $"epoch: {epoch} batch: {batchN} of {batchCount}";
+                    }
+                    
+                    Console.WriteLine($"Epoch {epoch}. Avg. loss: {totalLoss / batchCount}");
+                    var epochEnd = new EpochEndEventArgs { Epoch = epoch, AvgLoss = totalLoss / batchCount };
+                    improved(null, epochEnd);
+                }
             }
         }
 
-        static void Render(Model siren, int width, int height, string path) {
-            var renderCoords = ImageTools.Coord(height, width).ToNumPyArray();
-            ndarray<float> renderBytes = siren.predict(
-                renderCoords.reshape(new[] { height * width, 2 }),
-                batch_size: 1024);
+        static void Render(Module siren, int width, int height, string path) {
+            var renderCoords = ImageTools.Coord(height, width).ToTensor();
+            var renderBytes = siren.forward(renderCoords.reshape(height * width, 2));
             const int channels = 4;
-            renderBytes = (ndarray<float>)renderBytes.reshape(new[] { height, width, channels });
+            renderBytes = renderBytes.reshape(height, width, channels);
             using var bitmap = ToImage(RestoreImage(renderBytes));
             bitmap.Save(path, ImageFormat.Png);
         }
 
-        static ndarray<float> PrepareImage(byte[,,] image) {
-            int height = image.GetLength(0);
-            int width = image.GetLength(1);
-            int channels = image.GetLength(2);
+        static Module ClampToValidChannelValueRange()
+            => new Clamp {
+                Min = ImageTools.NormalizeChannelValue(-0.01f),
+                Max = ImageTools.NormalizeChannelValue(255.01f),
+            };
 
-            var normalized = ImageTools.NormalizeChannelValue(image.ToNumPyArray());
-            var flattened = normalized.reshape(new[] { height * width, channels }).astype(np.float32_fn);
-            return (ndarray<float>)flattened;
-        }
-
-        static Tensor ClampToValidChannelValueRange(Tensor input)
-            => tf.clip_by_value(input,
-                clip_value_min: ImageTools.NormalizeChannelValue(-0.01f),
-                clip_value_max: ImageTools.NormalizeChannelValue(255.01f));
-
-        static unsafe byte[,,] RestoreImage(ndarray<float> learnedImage) {
-            (int height, int width, int channels) = (ValueTuple<int, int, int>)learnedImage.shape;
-            var bytes = (learnedImage * 128f + 128f).clip(0, 255).astype(np.uint8_fn).tobytes();
+        static unsafe byte[,,] RestoreImage(TorchTensor learnedImage) {
+            (long height, long width, long channels) = learnedImage.shape;
+            var bytes = (learnedImage * 128f + 128f).clip(0, 255).to_type(ScalarType.Byte).Data<byte>();
             Debug.Assert(bytes.Length == height * width * channels);
             byte[,,] result = new byte[height, width, channels];
             fixed (byte* dest = result)
@@ -142,25 +148,6 @@
             }
 
             return bitmap;
-        }
-
-        static unsafe byte[,,] ToBytesHWC(Bitmap bitmap) {
-            byte[,,] result = new byte[bitmap.Height, bitmap.Width, 4];
-            int rowBytes = bitmap.Width * 4;
-            var rect = new Rectangle(default, new Size(bitmap.Width, bitmap.Height));
-            var data = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-            try {
-                fixed (byte* dest = result) {
-                    for (int y = 0; y < bitmap.Height; y++) {
-                        var source = data.Scan0 + data.Stride * y;
-                        Buffer.MemoryCopy((byte*)source, destination: &dest[rowBytes * y], rowBytes, rowBytes);
-                    }
-                }
-            } finally {
-                bitmap.UnlockBits(data);
-            }
-
-            return result;
         }
     }
 }

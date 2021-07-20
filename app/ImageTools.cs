@@ -1,4 +1,10 @@
-﻿namespace tensorflow.keras {
+﻿namespace LostTech.Torch.NN {
+    using System;
+    using System.Drawing;
+    using System.Drawing.Imaging;
+    using TorchSharp;
+    using TorchSharp.Tensor;
+
     class ImageTools {
         public static float[,,] Coord(int width, int height) {
             var result = new float[width, height, 2];
@@ -12,5 +18,36 @@
         }
 
         public static dynamic NormalizeChannelValue(dynamic value) => value / 128f - 1f;
+
+        public static unsafe byte[,,] ToBytesHWC(Bitmap bitmap) {
+            byte[,,] result = new byte[bitmap.Height, bitmap.Width, 4];
+            int rowBytes = bitmap.Width * 4;
+            var rect = new Rectangle(default, new Size(bitmap.Width, bitmap.Height));
+            var data = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+            try {
+                fixed (byte* dest = result) {
+                    for (int y = 0; y < bitmap.Height; y++) {
+                        var source = data.Scan0 + data.Stride * y;
+                        Buffer.MemoryCopy((byte*)source, destination: &dest[rowBytes * y], rowBytes, rowBytes);
+                    }
+                }
+            } finally {
+                bitmap.UnlockBits(data);
+            }
+
+            return result;
+        }
+
+        public static TorchTensor PrepareImage(byte[,,] image, Device? device = null) {
+            int height = image.GetLength(0);
+            int width = image.GetLength(1);
+            int channels = image.GetLength(2);
+
+            byte[] flattened = image.Flatten();
+            var unnormalized = ByteTensor.from(flattened, dimensions: new long[] { height * width, channels });
+            if (device is not null) unnormalized = unnormalized.to(device);
+            var normalized = ImageTools.NormalizeChannelValue(unnormalized.to_type(ScalarType.Float32));
+            return normalized;
+        }
     }
 }
