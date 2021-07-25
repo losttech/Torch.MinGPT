@@ -3,10 +3,11 @@
     using System.Collections.Generic;
     using System.Linq;
     using TorchSharp;
-    using TorchSharp.NN;
-    using TorchSharp.Tensor;
+    using TorchSharp.Modules;
+
     using static System.FormattableString;
-    using static TorchSharp.NN.Modules;
+    using static TorchSharp.torch;
+    using static TorchSharp.torch.nn;
 
     /// <summary>
     /// Implements <a href="https://vsitzmann.github.io/siren/">SIREN: Implicit Neural Representations with Periodic Activation Functions</a>
@@ -76,7 +77,7 @@
             this.InputFrequencyScale = inputFrequencyScale;
             this.InnerFrequencyScale = innerFrequencyScale;
 
-            using var noGrad = new AutoGradMode(false);
+            using var noGrad = torch.no_grad();
 
             this.innerLayers = new Linear[innerSizes.Length];
 
@@ -90,21 +91,26 @@
                     : 1.0f / inputSize;
                 var layer = Linear(inputSize: currentInputSize, outputSize: innerSizes[innerIndex]);
                 this.innerLayers[innerIndex] = layer;
-                Init.uniform(layer.Weight, low: -weightLimits, high: +weightLimits);
+                init.uniform(layer.Weight, low: -weightLimits, high: +weightLimits);
                 this.RegisterModule(Invariant($"i{innerIndex}"), layer);
 
                 currentInputSize = innerSizes[innerIndex];
             }
         }
 
-        public override TorchTensor forward(TorchTensor t) {
+        public override Tensor forward(Tensor t) {
             var result = t;
             for (int layerIndex = 0; layerIndex < this.innerLayers.Length; layerIndex++) {
                 var layer = this.innerLayers[layerIndex];
                 float frequencyScale = layerIndex == 0
                     ? this.InputFrequencyScale
                     : this.InnerFrequencyScale;
-                result = (layer.forward(result) * frequencyScale).sin_();
+                var next = layer.forward(result);
+                next.mul_(frequencyScale);
+                next.sin_();
+                if (!ReferenceEquals(result, t))
+                    result.Dispose();
+                result = next;
             }
 
             return result;

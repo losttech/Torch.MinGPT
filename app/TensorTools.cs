@@ -1,15 +1,15 @@
 namespace LostTech.Torch {
-    using TorchSharp;
-    using TorchSharp.Tensor;
+    using static TorchSharp.torch;
+
     static class TensorTools {
-        public static (TorchTensor ins, TorchTensor outs) RandomBatch(
-                this (TorchTensor ins, TorchTensor outs) pair, int batchSize,
+        public static (Tensor ins, Tensor outs) RandomBatch(
+                this (Tensor ins, Tensor outs) pair, int batchSize,
                 Device? device = null) {
-            using var noGrad = new AutoGradMode(false);
+            using var noGrad = no_grad();
             using var indices = Int64Tensor.randint(max: pair.ins.shape[0],
                                                     size: new long[] { batchSize },
                                                     device: device);
-            var tensorIndices = TorchTensorIndex.Tensor(indices);
+            var tensorIndices = TensorIndex.Tensor(indices);
             return (pair.ins[tensorIndices], pair.outs[tensorIndices]);
         }
     }

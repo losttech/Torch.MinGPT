@@ -1,13 +1,13 @@
 namespace LostTech.Torch {
-    using TorchSharp.NN;
-    using TorchSharp.Tensor;
+    using static TorchSharp.torch;
+    using static TorchSharp.torch.nn;
 
     public class Clamp : CustomModule {
         public double Min { get; set; }
         public double Max { get; set; }
         public Clamp() : base("clip") { }
 
-        public override TorchTensor forward(TorchTensor t)
+        public override Tensor forward(Tensor t)
             => t.clamp(this.Min, this.Max);
     }
 }

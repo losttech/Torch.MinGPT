@@ -1,10 +1,12 @@
 namespace LostTech.Torch.NN {
     using System;
-    using TorchSharp.Tensor;
+
+    using TorchSharp;
+    using static TorchSharp.torch;
 
     static class ArrayTools {
-        public static TorchTensor ToTensor(this float[,,] array)
-            => Flatten(array).ToTorchTensor(new long[]{
+        public static Tensor ToTensor(this float[,,] array)
+            => Flatten(array).ToTensor(new long[]{
                 array.GetLongLength(0),
                 array.GetLongLength(1),
                 array.GetLongLength(2)});

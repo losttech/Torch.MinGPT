@@ -2,12 +2,12 @@
     using System;
     using System.Drawing;
     using System.Drawing.Imaging;
-    using TorchSharp;
-    using TorchSharp.Tensor;
+
+    using static TorchSharp.torch;
 
     class ImageTools {
         public static float[,,] Coord(int width, int height) {
-            var result = new float[width, height, 2];
+            float[,,] result = new float[width, height, 2];
             for (int x = 0; x < width; x++)
                 for (int y = 0; y < height; y++) {
                     result[x, y, 0] = x * 2f / width - 1;
@@ -38,7 +38,7 @@
             return result;
         }
 
-        public static TorchTensor PrepareImage(byte[,,] image, Device? device = null) {
+        public static Tensor PrepareImage(byte[,,] image, Device? device = null) {
             int height = image.GetLength(0);
             int width = image.GetLength(1);
             int channels = image.GetLength(2);

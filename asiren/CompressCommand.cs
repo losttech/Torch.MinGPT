@@ -4,10 +4,11 @@
     using System.IO;
     using System.Linq;
     using ManyConsole.CommandLineUtils;
+
     using TorchSharp;
-    using TorchSharp.NN;
-    using TorchSharp.Tensor;
-    using static TorchSharp.NN.Modules;
+
+    using static TorchSharp.torch.nn;
+    using static TorchSharp.torch.optim;
 
     public class CompressCommand : ConsoleCommand {
         public override int Run(string[] remainingArguments) {
@@ -28,18 +29,22 @@
                 //new GaussianNoise(stddev: 1f/4096),
             );
 
-            var device = Torch.IsCudaAvailable() ? Device.CUDA : null;
-
-            if (device is not null) siren = siren.to(device);
-
-            var optimizer = Optimizer.Adam(siren.parameters(), learningRate: 3e-6);
-            var loss = Functions.mse_loss();
+            var device = torch.cuda.is_available() ? torch.CUDA : null;
 
             var coords = Enumerable.Range(0, samples.Length)
                 .Select(i => i * 2f / samples.Length - 1)
-                .ToArray().ToTorchTensor(new long[] { samples.Length, 1 });
+                .ToArray().ToTensor(new long[] { samples.Length, 1 });
 
-            var feedableSamples = samples.ToTorchTensor(new long[] { samples.Length, 1 });
+            var feedableSamples = samples.ToTensor(new long[] { samples.Length, 1 });
+
+            if (device is not null) {
+                siren = siren.to(device);
+                coords = coords.to(device);
+                feedableSamples = feedableSamples.to(device);
+            }
+
+            var optimizer = Adam(siren.parameters(), learningRate: 3e-6);
+            var loss = functional.mse_loss();
 
             if (device is not null) {
                 coords = coords.to(device);
@@ -51,7 +56,7 @@
             var improved = ImprovedCallback.Create((sender, eventArgs) => {
                 if (eventArgs.Epoch < lastUpgrade + ImproveEvery) return;
 
-                using var noGrad = new AutoGradMode(false);
+                using var noGrad = torch.no_grad();
                 siren.save(destPath);
 
                 using var sample = siren.forward(coords).cpu();
@@ -82,9 +87,10 @@
 
                     ins.Dispose(); outs.Dispose();
 
-                    using var noGrad = new AutoGradMode(false);
-                    totalLoss += batchLoss.cpu().mean().ToDouble();
+                    using var noGrad = torch.no_grad();
+                    totalLoss += batchLoss.detach().cpu().mean().ToDouble();
 
+                    GC.Collect();
                     Console.Title = $"epoch: {epoch} batch: {batchN} of {batchesPerEpoch}";
                 }
                 var epochEnd = new EpochEndEventArgs {

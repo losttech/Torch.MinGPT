@@ -41,7 +41,7 @@ See project page for usage example.
   <ItemGroup>
     <!-- The following is recommended for public projects -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="TorchSharp" Version="0.91.52681" />
+    <PackageReference Include="TorchSharp" Version="0.91.52719" />
   </ItemGroup>
 
 </Project>

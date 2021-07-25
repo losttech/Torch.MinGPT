@@ -5,31 +5,35 @@
     using System.Drawing;
     using System.Drawing.Imaging;
     using System.Linq;
+    using System.Runtime.InteropServices;
+
     using TorchSharp;
-    using TorchSharp.NN;
-    using TorchSharp.Tensor;
-    using static TorchSharp.NN.Modules;
+
+    using static TorchSharp.torch;
+    using static TorchSharp.torch.nn;
 
     class UpscaleProgram {
         static void Main(string[] args) {
+            using var sirenModule = new Siren(2, Enumerable.Repeat(64, 4).ToArray());
+            using var clipModule = ClampToValidChannelValueRange();
             Module siren = Sequential(
                 ("in_noise", new GaussianNoise { StdDev = 1f / (128 * 1024) }),
-                ("siren", new Siren(2, Enumerable.Repeat(64, 4).ToArray())),
+                ("siren", sirenModule),
                 ("out_dense", Linear(inputSize: 64, outputSize: 4)),
                 // this allows SIREN to oversaturate channels without adding to the loss
-                ("clip", ClampToValidChannelValueRange()),
+                ("clip", clipModule),
                 ("out_noise", new GaussianNoise { StdDev = 1f / 128 })
             );
 
-            var device = Torch.IsCudaAvailable() ? Device.CUDA : null;
+            var device = torch.cuda.is_available() ? torch.CUDA : null;
 
             if (device is not null) siren = siren.to(device);
 
-            int batchSize = Torch.IsCudaAvailable() ? 8*1024 : 64;
+            int batchSize = torch.cuda.is_available() ? 4*1024 : 64;
 
             // lowered learning rate to avoid destabilization
-            var optimizer = Optimizer.Adam(siren.parameters(), learningRate: 0.00032 * 64 / batchSize);
-            var loss = Functions.mse_loss();
+            var optimizer = torch.optim.Adam(siren.parameters(), learningRate: 0.00032 * 64 / batchSize);
+            var loss = torch.nn.functional.mse_loss();
 
             if (args.Length == 0) {
                 siren.load("sample.weights");
@@ -45,10 +49,10 @@
                 int channels = image.GetLength(2);
                 Debug.Assert(channels == 4);
 
-                TorchTensor imageSamples = ImageTools.PrepareImage(image, device);
+                using var imageSamples = ImageTools.PrepareImage(image, device);
 
                 var coords = ImageTools.Coord(height, width)
-                    .Flatten().ToTorchTensor(new long[] { width * height, 2 });
+                    .Flatten().ToTensor(new long[] { width * height, 2 });
 
                 var upscaleCoords = ImageTools.Coord(height * 2, width * 2).ToTensor();
 
@@ -77,8 +81,10 @@
                 });
 
                 int batchCount = height * width / batchSize;
+                var epochStopwatch = Stopwatch.StartNew();
                 for (int epoch = 0; epoch < 10000; epoch++) {
                     double totalLoss = 0;
+                    epochStopwatch.Restart();
                     for (int batchN = 0; batchN < batchCount; batchN++) {
                         var (ins, outs) = (coords, imageSamples).RandomBatch(batchSize, device);
                         optimizer.zero_grad();
@@ -87,17 +93,19 @@
                         batchLoss.backward();
                         optimizer.step();
 
+                        using var noGrad = no_grad();
+                        using var cpuBatchLoss = batchLoss.cpu();
+                        using var meanLoss = cpuBatchLoss.mean();
+                        totalLoss += meanLoss.ToDouble();
+
                         ins.Dispose();
                         outs.Dispose();
 
-                        using var noGrad = new AutoGradMode(false);
-                        totalLoss += batchLoss.cpu().mean().ToDouble();
-
-                        Console.Title = $"epoch: {epoch} batch: {batchN} of {batchCount}";
+                        Console.Title = $"epoch: {epoch} batch: {batchN+1} of {batchCount}";
                     }
-                    
+
                     GC.Collect();
-                    Console.WriteLine($"Epoch {epoch}. Avg. loss: {totalLoss / batchCount}");
+                    Console.WriteLine($"Epoch {epoch}. Avg. loss: {totalLoss / batchCount} in {epochStopwatch.ElapsedMilliseconds}ms");
                     var epochEnd = new EpochEndEventArgs { Epoch = epoch, AvgLoss = totalLoss / batchCount };
                     improved(null, epochEnd);
                 }
@@ -119,7 +127,7 @@
                 Max = ImageTools.NormalizeChannelValue(255.01f),
             };
 
-        static unsafe byte[,,] RestoreImage(TorchTensor learnedImage) {
+        static unsafe byte[,,] RestoreImage(Tensor learnedImage) {
             (long height, long width, long channels) = learnedImage.shape;
             var bytes = (learnedImage * 128f + 128f).clip(0, 255).to_type(ScalarType.Byte).Data<byte>();
             Debug.Assert(bytes.Length == height * width * channels);
