@@ -41,6 +41,11 @@
 
             var feedableSamples = samples.ToTorchTensor(new long[] { samples.Length, 1 });
 
+            if (device is not null) {
+                coords = coords.to(device);
+                feedableSamples = feedableSamples.to(device);
+            }
+
             int lastUpgrade = 0;
             const int ImproveEvery = 50;
             var improved = ImprovedCallback.Create((sender, eventArgs) => {
