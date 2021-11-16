@@ -3,8 +3,8 @@
   <PropertyGroup>
     <AssemblyName>LostTech.Torch.Siren</AssemblyName>
     <RootNamespace>LostTech.Torch</RootNamespace>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <LangVersion>9.0</LangVersion>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>10.0</LangVersion>
     <VersionPrefix>0.2.0</VersionPrefix>
     <Nullable>enable</Nullable>
 
@@ -40,8 +40,8 @@ See project page for usage example.
 
   <ItemGroup>
     <!-- The following is recommended for public projects -->
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="TorchSharp" Version="0.91.52719" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    <PackageReference Include="TorchSharp" Version="0.95.3" />
   </ItemGroup>
 
 </Project>

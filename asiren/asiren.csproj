@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="libtorch-cuda-11.1-win-x64" Version="1.9.0.10" />
+    <PackageReference Include="libtorch-cuda-11.3-win-x64" Version="1.10.0.1" />
     <PackageReference Include="ManyConsole.CommandLineUtils" Version="1.1.8-alpha" />
     <PackageReference Include="NAudio" Version="2.0.1" />
   </ItemGroup>

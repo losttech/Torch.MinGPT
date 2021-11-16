@@ -2,7 +2,7 @@ namespace LostTech.Torch.NN {
     using static TorchSharp.torch;
     using static TorchSharp.torch.nn;
 
-    public class GaussianNoise : CustomModule {
+    public class GaussianNoise : Module {
         public double StdDev { get; set; } = 1;
         public GaussianNoise():base("GaussianNoise"){}
 

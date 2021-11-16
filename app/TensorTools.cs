@@ -6,9 +6,10 @@ namespace LostTech.Torch {
                 this (Tensor ins, Tensor outs) pair, int batchSize,
                 Device? device = null) {
             using var noGrad = no_grad();
-            using var indices = Int64Tensor.randint(max: pair.ins.shape[0],
-                                                    size: new long[] { batchSize },
-                                                    device: device);
+            using var indices = randint(high: pair.ins.shape[0],
+                                        size: new long[] { batchSize },
+                                        dtype: ScalarType.Int64,
+                                        device: device);
             var tensorIndices = TensorIndex.Tensor(indices);
             return (pair.ins[tensorIndices], pair.outs[tensorIndices]);
         }

@@ -22,7 +22,7 @@
         public static unsafe byte[,,] ToBytesHWC(Bitmap bitmap) {
             byte[,,] result = new byte[bitmap.Height, bitmap.Width, 4];
             int rowBytes = bitmap.Width * 4;
-            var rect = new Rectangle(default, new Size(bitmap.Width, bitmap.Height));
+            var rect = new Rectangle(default, new System.Drawing.Size(bitmap.Width, bitmap.Height));
             var data = bitmap.LockBits(rect, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
             try {
                 fixed (byte* dest = result) {
@@ -44,7 +44,7 @@
             int channels = image.GetLength(2);
 
             byte[] flattened = image.Flatten();
-            var unnormalized = ByteTensor.from(flattened, dimensions: new long[] { height * width, channels });
+            var unnormalized = tensor(flattened, dimensions: new long[] { height * width, channels });
             if (device is not null) unnormalized = unnormalized.to(device);
             var normalized = ImageTools.NormalizeChannelValue(unnormalized.to_type(ScalarType.Float32));
             return normalized;

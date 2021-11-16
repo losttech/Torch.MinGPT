@@ -1,6 +1,7 @@
 namespace LostTech.Torch.NN {
     using System.Diagnostics;
     using System.Drawing;
+    using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
 
     using TorchSharp;
@@ -53,6 +54,12 @@ namespace LostTech.Torch.NN {
             double recallLoss = loss(recall, trainImage).mean().ToDouble();
             Assert.True(recallLoss < 0.0001, recallLoss.ToString());
             return model;
+        }
+
+        [ModuleInitializer]
+        internal static void Setup() {
+            // workaround for https://github.com/dotnet/TorchSharp/issues/449
+            torch.TryInitializeDeviceType(DeviceType.CPU);
         }
     }
 }

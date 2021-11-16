@@ -52,7 +52,7 @@
             }
 
             int lastUpgrade = 0;
-            const int ImproveEvery = 50;
+            const int ImproveEvery = 5;
             var improved = ImprovedCallback.Create((sender, eventArgs) => {
                 if (eventArgs.Epoch < lastUpgrade + ImproveEvery) return;
 
@@ -61,7 +61,7 @@
 
                 using var sample = siren.forward(coords).cpu();
                 float[] rawSample = new float[samples.Length];
-                sample.Data<float>().CopyTo(rawSample);
+                sample.data<float>().CopyTo(rawSample);
                 for (int i = 0; i < rawSample.Length; i++) {
                     rawSample[i] = Clamp(min: -1, max: 1, sample[i, 0].ToScalar().ToSingle());
                 }

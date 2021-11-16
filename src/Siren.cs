@@ -15,7 +15,7 @@
     ///
     /// <para>All SIREN inputs must be normalized to [-1;1] interval.</para>
     /// </summary>
-    public class Siren : CustomModule {
+    public class Siren : Module {
         readonly Linear[] innerLayers;
         /// <summary>
         /// Frequency scale for input layer (<c>first_omega_0</c> in the paper).
@@ -91,8 +91,8 @@
                     : 1.0f / inputSize;
                 var layer = Linear(inputSize: currentInputSize, outputSize: innerSizes[innerIndex]);
                 this.innerLayers[innerIndex] = layer;
-                init.uniform(layer.Weight, low: -weightLimits, high: +weightLimits);
-                this.RegisterModule(Invariant($"i{innerIndex}"), layer);
+                init.uniform_(layer.Weight, low: -weightLimits, high: +weightLimits);
+                this.register_module(Invariant($"i{innerIndex}"), layer);
 
                 currentInputSize = innerSizes[innerIndex];
             }

@@ -129,7 +129,7 @@
 
         static unsafe byte[,,] RestoreImage(Tensor learnedImage) {
             (long height, long width, long channels) = learnedImage.shape;
-            var bytes = (learnedImage * 128f + 128f).clip(0, 255).to_type(ScalarType.Byte).Data<byte>();
+            byte[] bytes = (learnedImage * 128f + 128f).clip(0, 255).to_type(ScalarType.Byte).data<byte>().ToArray();
             Debug.Assert(bytes.Length == height * width * channels);
             byte[,,] result = new byte[height, width, channels];
             fixed (byte* dest = result)
@@ -143,7 +143,7 @@
                 throw new NotSupportedException();
             var bitmap = new Bitmap(bytesHWC.GetLength(1), bytesHWC.GetLength(0));
             int rowBytes = bitmap.Width * 4;
-            var rect = new Rectangle(default, new Size(bitmap.Width, bitmap.Height));
+            var rect = new Rectangle(default, new System.Drawing.Size(bitmap.Width, bitmap.Height));
             var data = bitmap.LockBits(rect, ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
             try {
                 fixed (byte* source = bytesHWC) {
