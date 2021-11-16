@@ -1,6 +1,7 @@
 namespace LostTech.Torch.NN {
     using System.Diagnostics;
     using System.Drawing;
+    using System.Linq;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
 
@@ -24,9 +25,11 @@ namespace LostTech.Torch.NN {
             var coords = Coord(wikiLogo.Height, wikiLogo.Width).Flatten()
                          .ToTensor(new long[] { wikiLogo.Height * wikiLogo.Width, 2 });
 
+            const int IntermediateSize = 256;
+
             var model = Sequential(
-                ("siren", new Siren(2, innerSizes: new[] { 128, 128, 128, 128 })),
-                ("linear", Linear(inputSize: 128, outputSize: 1)),
+                ("siren", new Siren(2, innerSizes: Enumerable.Repeat(IntermediateSize, 5).ToArray())),
+                ("linear", Linear(inputSize: IntermediateSize, outputSize: 4)),
                 ("final_activation", ReLU())
             );
 
