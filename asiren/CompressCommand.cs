@@ -1,4 +1,4 @@
-namespace LostTech.Torch.NN {
+﻿namespace LostTech.Torch.NN {
     using System;
     using System.Diagnostics;
     using System.IO;
@@ -70,6 +70,9 @@ namespace LostTech.Torch.NN {
                 Console.WriteLine($"saved! epoch: {eventArgs.Epoch} loss: {eventArgs.AvgLoss}");
 
                 lastUpgrade = eventArgs.Epoch;
+
+                // workaround for https://github.com/dotnet/TorchSharp/issues/372
+                siren = siren.to(device);
             });
 
             int batchesPerEpoch = samples.Length / this.BatchSize;
