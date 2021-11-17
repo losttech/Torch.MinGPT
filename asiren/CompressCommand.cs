@@ -1,4 +1,4 @@
-﻿namespace LostTech.Torch.NN {
+namespace LostTech.Torch.NN {
     using System;
     using System.Diagnostics;
     using System.IO;
@@ -59,16 +59,15 @@
                 using var noGrad = torch.no_grad();
                 siren.save(destPath);
 
-                using var sample = siren.forward(coords).cpu();
-                float[] rawSample = new float[samples.Length];
-                sample.data<float>().CopyTo(rawSample);
+                var @out = siren.BatchForward(coords.detach().cpu(), this.BatchSize);
+                float[] rawSample = @out.data<float>().ToArray();
                 for (int i = 0; i < rawSample.Length; i++) {
-                    rawSample[i] = Clamp(min: -1, max: 1, sample[i, 0].ToScalar().ToSingle());
+                    rawSample[i] = Clamp(min: -1, max: 1, rawSample[i]);
                 }
                 AudioTools.Write(destSamplePath, rawSample, sampleRate);
 
                 Console.WriteLine();
-                Console.WriteLine("saved!");
+                Console.WriteLine($"saved! epoch: {eventArgs.Epoch} loss: {eventArgs.AvgLoss}");
 
                 lastUpgrade = eventArgs.Epoch;
             });

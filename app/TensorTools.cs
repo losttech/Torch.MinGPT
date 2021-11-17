@@ -1,5 +1,9 @@
 namespace LostTech.Torch {
+    using System.Collections.Generic;
+    using System.Linq;
+
     using static TorchSharp.torch;
+    using static TorchSharp.torch.nn;
 
     static class TensorTools {
         public static (Tensor ins, Tensor outs) RandomBatch(
@@ -12,6 +16,20 @@ namespace LostTech.Torch {
                                         device: device);
             var tensorIndices = TensorIndex.Tensor(indices);
             return (pair.ins[tensorIndices], pair.outs[tensorIndices]);
+        }
+
+        public static Tensor BatchForward(this Module module, Tensor ins, int batchSize) {
+            var inChunks = ins.split(batchSize);
+
+            var outChunks = inChunks.Select(module.forward).ToList();
+            foreach (var chunk in inChunks)
+                chunk.Dispose();
+
+            var output = cat(outChunks, dimension: 0);
+            foreach (var chunk in outChunks)
+                chunk.Dispose();
+
+            return output;
         }
     }
 }
