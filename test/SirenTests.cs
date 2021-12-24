@@ -62,7 +62,7 @@ namespace LostTech.Torch.NN {
         [ModuleInitializer]
         internal static void Setup() {
             // workaround for https://github.com/dotnet/TorchSharp/issues/449
-            torch.TryInitializeDeviceType(DeviceType.CPU);
+            //torch.TryInitializeDeviceType(DeviceType.CPU);
         }
     }
 }

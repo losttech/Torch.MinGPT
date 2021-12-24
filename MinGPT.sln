@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30309.148
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Repo", "Repo", "{9E5831CD-6490-4374-8502-825AB423A8B7}"
 	ProjectSection(SolutionItems) = preProject
@@ -14,13 +14,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CI", "CI", "{8C3BD3D9-5F7E-
 		CI\Azure-Master.yml = CI\Azure-Master.yml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Siren", "src\Siren.csproj", "{04BE1707-4235-44E6-AB58-48621D5160D3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MinGPT", "src\MinGPT.csproj", "{04BE1707-4235-44E6-AB58-48621D5160D3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Siren.Tests", "test\Siren.Tests.csproj", "{241AC79D-0399-4B2A-9C01-07C609F74B69}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MinGPT.Tests", "test\MinGPT.Tests.csproj", "{241AC79D-0399-4B2A-9C01-07C609F74B69}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "app", "app\app.csproj", "{8E80FDD8-29AE-4F86-9C00-939DAB2A233A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "asiren", "asiren\asiren.csproj", "{665AB236-2DB1-465B-A230-53486D74DBD6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -68,18 +66,6 @@ Global
 		{8E80FDD8-29AE-4F86-9C00-939DAB2A233A}.Release|x64.Build.0 = Release|Any CPU
 		{8E80FDD8-29AE-4F86-9C00-939DAB2A233A}.Release|x86.ActiveCfg = Release|Any CPU
 		{8E80FDD8-29AE-4F86-9C00-939DAB2A233A}.Release|x86.Build.0 = Release|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Debug|x64.Build.0 = Debug|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Debug|x86.Build.0 = Debug|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Release|x64.ActiveCfg = Release|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Release|x64.Build.0 = Release|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Release|x86.ActiveCfg = Release|Any CPU
-		{665AB236-2DB1-465B-A230-53486D74DBD6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

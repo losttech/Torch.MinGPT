@@ -1,4 +1,5 @@
 namespace LostTech.Torch {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -21,9 +22,12 @@ namespace LostTech.Torch {
         public static Tensor BatchForward(this Module module, Tensor ins, int batchSize) {
             var inChunks = ins.split(batchSize);
 
-            var outChunks = inChunks.Select(module.forward).ToList();
-            foreach (var chunk in inChunks)
-                chunk.Dispose();
+            var outChunks = inChunks.Select(c => {
+                var tmpOut = module.forward(c);
+                c.Dispose();
+                tmpOut.detach_().Dispose();
+                return tmpOut;
+            }).ToList();
 
             var output = cat(outChunks, dimension: 0);
             foreach (var chunk in outChunks)

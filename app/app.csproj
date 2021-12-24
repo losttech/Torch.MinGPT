@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Siren.csproj" />
+    <ProjectReference Include="..\src\MinGPT.csproj" />
   </ItemGroup>
 
 </Project>

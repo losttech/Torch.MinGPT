@@ -106,8 +106,8 @@
                     ? this.InputFrequencyScale
                     : this.InnerFrequencyScale;
                 var next = layer.forward(result);
-                next.mul_(frequencyScale);
-                next.sin_();
+                next.mul_(frequencyScale).Dispose();
+                next.sin_().Dispose();
                 if (!ReferenceEquals(result, t))
                     result.Dispose();
                 result = next;
