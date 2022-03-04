@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>LostTech.Torch.MinGPT</AssemblyName>
-    <RootNamespace>LostTech.Torch</RootNamespace>
+    <RootNamespace>LostTech.Torch.NN</RootNamespace>
     <TargetFramework>net6.0</TargetFramework>
     <LangVersion>10.0</LangVersion>
     <VersionPrefix>0.1.0</VersionPrefix>
@@ -28,13 +28,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\app\ArrayTools.cs" />
+  </ItemGroup>
+	
+  <ItemGroup>
     <None Include="..\LICENSE" Pack="true" PackagePath="" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- The following is recommended for public projects -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
-    <PackageReference Include="TorchSharp" Version="0.95.3" />
+    <PackageReference Include="TorchSharp" Version="0.96.3" />
   </ItemGroup>
 
 </Project>

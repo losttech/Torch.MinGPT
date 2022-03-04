@@ -3,7 +3,6 @@ namespace LostTech.Torch.NN {
     using System.Drawing;
     using System.Linq;
     using System.Runtime.CompilerServices;
-    using System.Runtime.InteropServices;
 
     using TorchSharp;
 
@@ -28,7 +27,7 @@ namespace LostTech.Torch.NN {
             const int IntermediateSize = 128;
 
             var model = Sequential(
-                ("siren", new Siren(2, innerSizes: Enumerable.Repeat(IntermediateSize, 3).ToArray())),
+                ("siren", new CasualSelfAttention(2, innerSizes: Enumerable.Repeat(IntermediateSize, 3).ToArray())),
                 ("linear", Linear(inputSize: IntermediateSize, outputSize: 4)),
                 ("final_activation", GELU())
             );
