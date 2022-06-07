@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30309.148
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32526.322
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Repo", "Repo", "{9E5831CD-6490-4374-8502-825AB423A8B7}"
 	ProjectSection(SolutionItems) = preProject
@@ -13,6 +13,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CI", "CI", "{8C3BD3D9-5F7E-4622-80E3-45BF5190320E}"
 	ProjectSection(SolutionItems) = preProject
 		CI\Azure-Master.yml = CI\Azure-Master.yml
+		.github\workflows\master.yml = .github\workflows\master.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ClassLib", "src\ClassLib.csproj", "{04BE1707-4235-44E6-AB58-48621D5160D3}"

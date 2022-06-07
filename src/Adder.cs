@@ -1,7 +1,6 @@
-﻿namespace ClassLib {
-    public class Adder {
-        public int Add(int a, int b) {
-            return a + b;
-        }
+﻿namespace ClassLib;
+public class Adder {
+    public int Add(int a, int b) {
+        return a + b;
     }
 }
