@@ -43,6 +43,8 @@ public sealed class CasualSelfAttention : Module {
 
         this.outputProjection = Linear(embeddingSize, embeddingSize);
 
+        this.RegisterComponents();
+
         this.mask = ones(blockSize, blockSize).tril()
                     .view(1, 1, blockSize, blockSize);
         this.register_buffer("mask", this.mask);

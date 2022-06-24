@@ -29,6 +29,8 @@ public class TransformerBlock : Module {
             Linear(4 * embeddingSize, embeddingSize),
             Dropout(residualDropout)
         );
+
+        this.RegisterComponents();
     }
 
     public override Tensor forward(Tensor x) {

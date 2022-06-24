@@ -27,7 +27,7 @@ namespace LostTech.Torch.NN {
             const int IntermediateSize = 128;
 
             var model = Sequential(
-                ("siren", new CasualSelfAttention(2, innerSizes: Enumerable.Repeat(IntermediateSize, 3).ToArray())),
+                //("siren", new GPT(2, innerSizes: Enumerable.Repeat(IntermediateSize, 3).ToArray())),
                 ("linear", Linear(inputSize: IntermediateSize, outputSize: 4)),
                 ("final_activation", GELU())
             );

@@ -60,11 +60,11 @@ public sealed class GPT : Module {
     }
 
     public override Tensor forward(Tensor index) {
-        long token = index.size(1);
-        if (token > this.BlockSize) throw new ArgumentException("Cannot forward, model block size is exhausted.");
+        long tokens = index.size(-1);
+        if (tokens > this.BlockSize) throw new ArgumentException("Cannot forward, model block size is exhausted.");
 
         var tokenEmbeddings = this.tokenEmbedding.forward(index); // each index maps to a (learnable) vector
-        var positionEmbeddings = this.positionalEmbedding[.., ..(int)token, ..]; // each position maps to a (learnable) vector
+        var positionEmbeddings = this.positionalEmbedding[.., ..(int)tokens, ..]; // each position maps to a (learnable) vector
         var x = this.dropout.forward(tokenEmbeddings + positionEmbeddings);
         x = this.blocks.forward(x);
         x = this.finalNorm.forward(x);
@@ -81,15 +81,26 @@ public sealed class GPT : Module {
     static void InitWeights(Module module) {
         switch (module) {
         case Linear l:
-            l.weight.normal_(mean: 0.0, stddev: 0.02);
-            l.bias?.zero_();
+            init.normal_(l.weight, mean: 0.0, std: 0.02);
+            if (l.bias is not null)
+                init.zeros_(l.bias);
             break;
         case Embedding e:
-            e.weight.normal_(mean: 0, stddev: 0.02);
+            init.normal_(e.weight, mean: 0, std: 0.02);
             break;
         case LayerNorm ln:
-            ln.get_parameter("bias").zero_();
-            ln.get_parameter("weight").fill_(1);
+            init.zeros_(ln.get_parameter("bias"));
+            init.ones_(ln.get_parameter("weight"));
+            break;
+        case CasualSelfAttention _:
+        case TransformerBlock _:
+        case Sequential _:
+        case GPT _:
+            //foreach (var (_, nested) in module.named_children())
+            //    nested.apply(InitWeights);
+            break;
+        case Dropout _:
+        case GELU _:
             break;
         default:
             break;
