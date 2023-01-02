@@ -33,7 +33,7 @@ namespace LostTech.Torch.NN {
             );
 
             using var optimizer = torch.optim.Adam(model.parameters());
-            var loss = functional.mse_loss();
+            var loss = MSELoss();
 
             int batchSize = wikiLogo.Height * wikiLogo.Width;
             const int batches = 40;
@@ -42,7 +42,7 @@ namespace LostTech.Torch.NN {
                 var (ins, outs) = (coords, trainImage).RandomBatch(batchSize);
                 optimizer.zero_grad();
                 using var predicted = model.forward(ins);
-                using var batchLoss = loss(predicted, outs);
+                using var batchLoss = loss.forward(predicted, outs);
                 batchLoss.backward();
                 optimizer.step();
 
@@ -53,7 +53,7 @@ namespace LostTech.Torch.NN {
                     Trace.WriteLine($"loss {batchN}: {batchLoss.mean().ToSingle()}");
             }
             using var recall = model.forward(coords);
-            double recallLoss = loss(recall, trainImage).mean().ToDouble();
+            double recallLoss = loss.forward(recall, trainImage).mean().ToDouble();
             Assert.True(recallLoss < 0.25, recallLoss.ToString());
             return model;
         }

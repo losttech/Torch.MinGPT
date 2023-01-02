@@ -13,7 +13,7 @@ using static TorchSharp.torch.nn;
 /// <summary>
 /// the full GPT language model, with a context size of <see cref="GPT.BlockSize"/>
 /// </summary>
-public sealed class GPT : Module {
+public sealed class GPT : Module<Tensor, Tensor> {
     readonly Embedding tokenEmbedding;
     readonly Parameter positionalEmbedding;
     readonly Dropout dropout;
@@ -74,7 +74,7 @@ public sealed class GPT : Module {
     }
 
     public static Tensor Loss(Tensor outputs, Tensor targets)
-        => functional.cross_entropy_loss()(
+        => functional.cross_entropy(
                    outputs.view(-1, outputs.size(-1)),
                    targets.view(-1));
 

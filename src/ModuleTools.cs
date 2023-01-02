@@ -1,14 +1,7 @@
 ﻿namespace LostTech.Torch.NN;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
-using TorchSharp;
-using TorchSharp.Modules;
-
-using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 
 static class ModuleTools {

@@ -1,19 +1,13 @@
 ﻿namespace LostTech.Torch.NN;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using TorchSharp;
-using TorchSharp.Modules;
-
 using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 
-public class TransformerBlock : Module {
+public class TransformerBlock : Module<Tensor, Tensor> {
     readonly LayerNorm layerNorm1, layerNorm2;
-    readonly Module attention;
+    readonly Module<Tensor, Tensor> attention;
     readonly Sequential mlp;
-    public TransformerBlock(int embeddingSize, Module attention, float residualDropout = 0.1f)
+    public TransformerBlock(int embeddingSize, Module<Tensor, Tensor> attention, float residualDropout = 0.1f)
         : base(nameof(TransformerBlock)) {
         if (attention is null) throw new ArgumentNullException(nameof(attention));
         if (embeddingSize <= 0) throw new ArgumentOutOfRangeException(nameof(embeddingSize));

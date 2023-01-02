@@ -1,12 +1,5 @@
 ﻿namespace LostTech.Torch.NN;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
-using TorchSharp;
-using TorchSharp.Modules;
-
 using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 
@@ -17,7 +10,7 @@ using static TorchSharp.torch.nn;
 /// here but I am including an explicit implementation here to show that there is
 /// nothing too scary here.
 /// </summary>
-public sealed class CasualSelfAttention : Module {
+public sealed class CasualSelfAttention : Module<Tensor, Tensor> {
     readonly Linear key, query, value;
     readonly Dropout attentionDropout, residualDropout;
     readonly Linear outputProjection;

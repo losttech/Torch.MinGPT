@@ -19,7 +19,7 @@ namespace LostTech.Torch {
             return (pair.ins[tensorIndices], pair.outs[tensorIndices]);
         }
 
-        public static Tensor BatchForward(this Module module, Tensor ins, int batchSize) {
+        public static Tensor BatchForward(this Module<Tensor, Tensor> module, Tensor ins, int batchSize) {
             var inChunks = ins.split(batchSize);
 
             var outChunks = inChunks.Select(c => {
@@ -29,7 +29,7 @@ namespace LostTech.Torch {
                 return tmpOut;
             }).ToList();
 
-            var output = cat(outChunks, dimension: 0);
+            var output = cat(outChunks, dim: 0);
             foreach (var chunk in outChunks)
                 chunk.Dispose();
 

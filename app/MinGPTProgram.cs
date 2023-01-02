@@ -31,7 +31,7 @@ args.AsParallel().ForAll(input => {
 
 byte[] itob = vocab.ToArray();
 var btoi = Enumerable.Range(0, vocab.Count).ToDictionary(i => itob[i], i => i);
-Module gpt = new GPT(vocabularySize: vocab.Count,
+var gpt = new GPT(vocabularySize: vocab.Count,
                      embeddingSize: 128,
                      blockSize: BLOCK_SIZE,
                      headCount: 8,
@@ -45,7 +45,7 @@ int batchSize = torch.cuda.is_available() ? 512 : 64;
 
 // lowered learning rate to avoid destabilization
 var optimizer = torch.optim.AdamW(gpt.parameters(), lr: 0.0003);
-var lossF = torch.nn.functional.cross_entropy_loss();
+var lossF = CrossEntropyLoss();
 
 if (args.Length == 0) {
     gpt.load("sample.weights");
@@ -116,7 +116,7 @@ double TrainOnFile(string filePath, ProgressBar parentProgressBar, out int batch
         var (@in, @out) = GetBatch(batchIndex);
 
         var logits = gpt.forward(@in);
-        var loss = lossF.Invoke(logits.view(-1, logits.size(-1)), @out.view(-1));
+        var loss = lossF.forward(logits.view(-1, logits.size(-1)), @out.view(-1));
 
         loss = loss.mean();
         loss.backward();

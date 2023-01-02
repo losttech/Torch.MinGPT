@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-using TorchSharp;
-
-using static TorchSharp.torch;
+﻿using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
 
 namespace LostTech.Torch.NN;
 public static class TextTransformer {
-    public static Tensor Sample(Module model, int blockSize,
+    public static Tensor Sample(Module<Tensor, Tensor> model,
+                                int blockSize,
                                 Tensor x, int steps,
                                 bool alwaysBest = true,
                                 float temperature = 1,
@@ -32,15 +27,16 @@ public static class TextTransformer {
             // sample from the distribution or take the most likely
             Tensor ix = !alwaysBest
                 ? torch.multinomial(probs, num_samples: 1)
-                : torch.topk(probs, k: 1, dimension: -1).indexes;
+                : torch.topk(probs, k: 1, dim: -1).indexes;
             // append to the sequence and continue
-            x = torch.cat(new[] { x, ix }, dimension: 1);
+            x = torch.cat(new[] { x, ix }, dim: 1);
         }
 
         return x;
     }
 
-    public static byte[] Sample(Module model, int blockSize,
+    public static byte[] Sample(Module<Tensor, Tensor> model,
+                                int blockSize,
                                 Dictionary<byte, int> byte2token,
                                 Dictionary<int, byte> token2byte,
                                 Device? device,
