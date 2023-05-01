@@ -9,10 +9,10 @@
     <Nullable>enable</Nullable>
 
     <!-- Package stuff -->
-    <Description>TBD</Description>
+    <Description>C# + TorchSharp implementation of GPT</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/losttech/Torch.MinGPT</PackageProjectUrl>
-    <PackageTags>PyTorch;TorchSharp;text-processing;deep-learning;ML</PackageTags>
+    <PackageTags>PyTorch;TorchSharp;text-processing;deep-learning;ML;AI;GPT;text-completion;transformer;NLP</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <Authors>Victor Nova</Authors>
     <Company>Lost Tech LLC</Company>
