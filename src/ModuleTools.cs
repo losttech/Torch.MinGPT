@@ -9,6 +9,8 @@ static class ModuleTools {
                                    [CallerArgumentExpression("var")] string name = null!)
         where T : Module {
         if (name is null) throw new ArgumentNullException(nameof(name));
+        if (name.StartsWith("this.", StringComparison.InvariantCulture))
+            name = name.Substring("this.".Length);
 
         var = module;
         parent.register_module(name, var);

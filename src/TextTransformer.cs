@@ -27,7 +27,7 @@ public static class TextTransformer {
             // sample from the distribution or take the most likely
             Tensor ix = !alwaysBest
                 ? torch.multinomial(probs, num_samples: 1)
-                : torch.topk(probs, k: 1, dim: -1).indexes;
+                : torch.topk(probs, k: 1, dim: -1).indices;
             // append to the sequence and continue
             x = torch.cat(new[] { x, ix }, dim: 1);
         }
