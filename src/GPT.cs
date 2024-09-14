@@ -56,6 +56,8 @@ public sealed class GPT : Module<Tensor, Tensor> {
         this.Register(out this.finalNorm, LayerNorm(new long[] { embeddingSize }));
         this.Register(out this.decoderHead, Linear(embeddingSize, vocabularySize, hasBias: false));
 
+        this.RegisterComponents();
+
         this.apply(InitWeights);
     }
 

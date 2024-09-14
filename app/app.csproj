@@ -13,9 +13,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="libtorch-cuda-11.7-win-x64" Version="1.13.0.1" />
     <PackageReference Include="ShellProgressBar" Version="5.2.0" />
-    <PackageReference Include="System.Drawing.Common" Version="6.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
+    <PackageReference Include="TorchSharp-cuda-windows" Version="0.103.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 using LostTech.Torch.NN;
 
 using ShellProgressBar;
-
-using TorchSharp;
 
 using static TorchSharp.torch;
 using static TorchSharp.torch.nn;
@@ -29,7 +24,7 @@ args.AsParallel().ForAll(input => {
     }
 });
 
-byte[] itob = vocab.ToArray();
+byte[] itob = [.. vocab];
 var btoi = Enumerable.Range(0, vocab.Count).ToDictionary(i => itob[i], i => i);
 var gpt = new GPT(vocabularySize: vocab.Count,
                      embeddingSize: 128,
@@ -111,6 +106,7 @@ double TrainOnFile(string filePath, ProgressBar parentProgressBar, out int batch
         ShowEstimatedDuration = true,
     };
     using var progressBar = parentProgressBar.Spawn(batches, "", displayOptions);
+    var stopwatch = Stopwatch.StartNew();
     for (int batchIndex = 0; batchIndex < batches; batchIndex++) {
         using var _ = torch.NewDisposeScope();
         var (@in, @out) = GetBatch(batchIndex);
@@ -131,7 +127,10 @@ double TrainOnFile(string filePath, ProgressBar parentProgressBar, out int batch
         using var noGrad = no_grad();
         totalLoss += loss.detach().cpu().mean().ToDouble();
 
-        progressBar.Tick($"loss: {totalLoss / (batchIndex + 1):0.00}");
+        int tokensPerSecond = (int)(step * batchSize / stopwatch.Elapsed.TotalSeconds);
+
+        progressBar.Tick($"loss: {totalLoss / (batchIndex + 1):0.00}" +
+            $" {tokensPerSecond} tokens/s");
     }
 
     return totalLoss;
