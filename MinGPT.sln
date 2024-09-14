@@ -12,6 +12,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CI", "CI", "{8C3BD3D9-5F7E-4622-80E3-45BF5190320E}"
 	ProjectSection(SolutionItems) = preProject
 		CI\Azure-Master.yml = CI\Azure-Master.yml
+		.github\workflows\master.yml = .github\workflows\master.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MinGPT", "src\MinGPT.csproj", "{04BE1707-4235-44E6-AB58-48621D5160D3}"

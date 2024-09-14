@@ -1,18 +1,14 @@
 namespace LostTech.Torch.NN {
     using System.Diagnostics;
     using System.Drawing;
-    using System.Linq;
     using System.Runtime.CompilerServices;
 
-    using TorchSharp;
-
-    using Xunit;
     using static ImageTools;
     using static TorchSharp.torch.nn;
 
     public partial class SirenTests {
         [Fact]
-        public Module CanLearn() {
+        public void CanLearn() {
             torch.random.manual_seed(119);
 
             var thisAssembly = System.Reflection.Assembly.GetExecutingAssembly();
@@ -55,7 +51,6 @@ namespace LostTech.Torch.NN {
             using var recall = model.forward(coords);
             double recallLoss = loss.forward(recall, trainImage).mean().ToDouble();
             Assert.True(recallLoss < 0.25, recallLoss.ToString());
-            return model;
         }
 
         [ModuleInitializer]

@@ -7,5 +7,7 @@ global using System.Threading.Tasks;
 global using TorchSharp;
 global using TorchSharp.Modules;
 
+global using Xunit;
+
 // for FormattableString.Invariant
 global using static System.FormattableString;
